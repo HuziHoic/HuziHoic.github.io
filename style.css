@@ -117,3 +117,8 @@ footer {
     display: block;
   }
 }
+
+.nav-links a.active {
+  color: #58a6ff;
+  font-weight: bold;
+}
