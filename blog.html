@@ -1,45 +1,50 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Blog | Husain Challawala</title>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
 <body>
-  <header>
-    <nav class="navbar">
-      <div class="logo">Husain Challawala</div>
-      <ul class="nav-links">
-        <li><a href="index.html">Home</a></li>
-        <li><a href="projects.html">Projects</a></li>
-        <li><a href="blog.html" class="active">Blog</a></li>
-        <li><a href="contact.html">Contact</a></li>
-      </ul>
-      <div class="menu-toggle" id="mobile-menu">&#9776;</div>
-    </nav>
-  </header>
+  <nav>
+    <a href="index.html">Home</a>
+    <a href="projects.html">Projects</a>
+    <a href="blog.html" class="active">Blog</a>
+    <a href="contact.html">Contact</a>
+  </nav>
 
-  <main class="section">
-    <h2>Blog</h2>
-    <div class="blog-grid">
-      <div class="blog-card">
-        <h3>Securing AWS Deployments</h3>
-        <p>Best practices for cloud security and CI/CD hardening.</p>
-        <a href="#" class="btn-outline">Read More</a>
-      </div>
-      <div class="blog-card">
-        <h3>Intro to Threat Detection with ML</h3>
-        <p>A hands-on guide to building anomaly detection models.</p>
-        <a href="#" class="btn-outline">Read More</a>
-      </div>
+  <main>
+    <h1>My Blog</h1>
+    <div id="post-list">
+      <ul>
+        <li><a href="?post=first-post">My First Blog Post</a></li>
+        <li><a href="?post=second-post">Another Blog Post</a></li>
+      </ul>
     </div>
+
+    <article id="post-content" class="hidden"></article>
   </main>
 
-  <footer>
-    <p>© 2025 Husain Challawala. All rights reserved.</p>
-  </footer>
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const post = params.get("post");
+    const postList = document.getElementById("post-list");
+    const postContent = document.getElementById("post-content");
 
-  <script src="script.js"></script>
+    if (post) {
+      fetch(`blogs/${post}.md`)
+        .then(res => res.text())
+        .then(text => {
+          postContent.innerHTML = marked.parse(text);
+          postList.classList.add("hidden");
+          postContent.classList.remove("hidden");
+        })
+        .catch(() => {
+          postContent.innerHTML = "<p>Post not found.</p>";
+        });
+    }
+  </script>
 </body>
 </html>
