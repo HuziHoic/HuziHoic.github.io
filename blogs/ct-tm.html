@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My experience volunteering at BSidesNYC 2025 | Husain Challawala</title>
+  <link rel="stylesheet" href="../style.css" />
+</head>
+<body>
+  <header>
+    <nav class="navbar">
+      <div class="logo">Husain Challawala</div>
+      <ul class="nav-links">
+        <li><a href="../index.html">Home</a></li>
+        <li><a href="../projects.html">Projects</a></li>
+        <li><a href="../blog.html">Blog</a></li>
+        <li><a href="../contact.html">Contact</a></li>
+      </ul>
+      <div class="menu-toggle" id="mobile-menu">&#9776;</div>
+    </nav>
+  </header>
+
+  <main class="section blog-post">
+    <div class="container">
+      <article>
+        <div class="blog-post-header">
+          <h1>CloudTrail Based AI Threat Detection</h1>
+          <p class="blog-meta">Published on January 2026</p>
+        </div>
+
+        <div class="blog-post-content">
+            <p>
+    Cloud environments generate massive volumes of audit logs, yet most security
+    incidents still go undetected until damage is done. While AWS provides managed
+    detection services like GuardDuty, understanding <em>how</em> detections work —
+    and building custom, explainable pipelines — is a critical skill for cloud
+    security engineers.
+  </p>
+
+  <p>
+    In this project, I built an end-to-end <strong>AI-driven CloudTrail threat
+    detection system</strong> that ingests AWS audit logs, models behavioral baselines,
+    applies hybrid rule + ML scoring, and generates human-readable alerts.
+  </p>
+
+  <h2>Architecture Overview</h2>
+
+  <ul>
+    <li>AWS CloudTrail logs stored in S3</li>
+    <li>Local ingestion and normalization into structured parquet datasets</li>
+    <li>Behavior window aggregation (per identity, per time window)</li>
+    <li>Unsupervised anomaly detection using Isolation Forest</li>
+    <li>Rule-based risk weighting for high-impact IAM actions</li>
+    <li>Alerting via AWS SNS with contextual explanations</li>
+  </ul>
+
+  <div class="callout">
+    <strong>Design goal:</strong> Build explainable detections — not a black box.
+  </div>
+
+  <h2>Why Not Just Use AWS GuardDuty?</h2>
+
+  <p>
+    GuardDuty is an excellent managed service, but it intentionally operates as a
+    black box. This project focuses on:
+  </p>
+
+  <ul>
+    <li>Transparent feature engineering</li>
+    <li>Customizable detection logic</li>
+    <li>Explainable alerts (“why did this fire?”)</li>
+    <li>Account-specific behavioral baselining</li>
+  </ul>
+
+  <p>
+    Many organizations run <strong>custom detections alongside GuardDuty</strong>
+    to reduce false positives and detect organization-specific abuse patterns.
+  </p>
+
+  <h2>Feature Engineering & Behavior Modeling</h2>
+
+  <p>
+    Raw CloudTrail events are aggregated into fixed time windows per principal
+    (IAM user or role). Each window is transformed into numerical features such as:
+  </p>
+
+  <ul>
+    <li>API call volume</li>
+    <li>Failed API ratio</li>
+    <li>Unique services accessed</li>
+    <li>Privilege-related API usage</li>
+    <li>MFA usage patterns</li>
+  </ul>
+
+  <p>
+    These features allow the model to learn <em>normal</em> behavior without requiring
+    labeled attack data.
+  </p>
+
+  <h2>Machine Learning: Isolation Forest</h2>
+
+  <p>
+    I used an <strong>Isolation Forest</strong> for unsupervised anomaly detection.
+    Unlike supervised models, it does not require pre-labeled malicious events,
+    making it well-suited for cloud audit data.
+  </p>
+
+  <p>
+    Anomaly scores are normalized into a 0–100 range to allow consistent comparison
+    across time windows.
+  </p>
+
+  <h2>Hybrid Rule + ML Scoring</h2>
+
+  <p>
+    Pure anomaly detection often flags benign spikes. To reduce false positives,
+    I implemented a hybrid scoring engine that combines:
+  </p>
+
+  <ul>
+    <li>ML anomaly score</li>
+    <li>High-risk API usage (e.g. <code>CreateAccessKey</code>)</li>
+    <li>Identity context (IAM user vs assumed role)</li>
+    <li>Privilege indicators</li>
+  </ul>
+
+  <p>
+    This mirrors real-world detection engineering, where ML highlights anomalies
+    and rules add security context.
+  </p>
+
+  <h2>Alerting & Explainability</h2>
+
+  <p>
+    Alerts are generated only when combined risk exceeds defined thresholds.
+    Each alert includes:
+  </p>
+
+  <ul>
+    <li><strong>Who:</strong> Identity involved</li>
+    <li><strong>What:</strong> Suspicious behavior window</li>
+    <li><strong>Why:</strong> Anomaly + rule-based reasons</li>
+    <li><strong>Confidence:</strong> Final risk score</li>
+  </ul>
+
+  <p>
+    Alerts are delivered via AWS SNS and summarized in Markdown incident reports.
+  </p>
+
+  <h2>Attack Simulation & Validation</h2>
+
+  <p>
+    To validate the pipeline, I simulated IAM abuse scenarios such as:
+  </p>
+
+  <ul>
+    <li>Access key creation</li>
+    <li>Privilege escalation attempts</li>
+    <li>Unusual API usage bursts</li>
+  </ul>
+
+  <p>
+    These simulations produced clear spikes in anomaly scores, validating the
+    detection logic end-to-end.
+  </p>
+
+  <h2>Key Takeaways</h2>
+
+  <ul>
+    <li>Cloud security detection is as much about context as ML</li>
+    <li>Explainability matters for incident response</li>
+    <li>Unsupervised models are powerful for audit logs</li>
+    <li>Defense-in-depth beats relying on a single service</li>
+  </ul>
+
+  <h2>Future Improvements</h2>
+
+  <ul>
+    <li>Streaming ingestion via Kinesis</li>
+    <li>Visualization dashboard (OpenSearch / Streamlit)</li>
+    <li>More granular IAM permission analysis</li>
+    <li>Automated incident enrichment</li>
+  </ul>
+
+  <p>
+    This project demonstrates practical detection engineering skills that translate
+    directly to cloud security, DevSecOps, and security engineering roles.
+  </p>
+          </div>
+
+        <div class="blog-post-footer">
+          <p><a href="../blog.html" class="btn-outline">← Back to Blog</a></p>
+        </div>
+      </article>
+    </div>
+  </main>
+
+  <footer>
+    <p>© 2025 Husain Challawala. All rights reserved.</p>
+  </footer>
+
+  <script src="../script.js"></script>
+</body>
+</html>
