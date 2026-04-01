@@ -204,6 +204,9 @@ main, .section {
   padding: 1.5rem;
   border-radius: 8px;
   transition: transform 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  min-height: 220px;
 }
 
 .project-card:hover {
@@ -221,11 +224,37 @@ main, .section {
 }
 
 /* Blog styles */
+.tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.tab-btn {
+  padding: 0.6rem 1rem;
+  border: 1px solid #58a6ff;
+  background: transparent;
+  color: #58a6ff;
+  border-radius: 0.35rem;
+  cursor: pointer;
+  transition: background 0.3s, color 0.3s;
+}
+
+.tab-btn.active,
+.tab-btn:hover {
+  background: #58a6ff;
+  color: #0d1117;
+}
+
+.tab-panel.hidden {
+  display: none;
+}
+
 .blog-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 2rem;
-  margin-top: 2rem;
+  margin-top: 0;
 }
 
 .blog-card {
@@ -262,10 +291,82 @@ main, .section {
   margin: 0 auto;
 }
 
+.project-card .btn-outline {
+  margin-top: auto;
+}
+
 .btn-outline:hover {
   background: #58a6ff;
   color: #0d1117;
   transform: translateY(-2px);
+}
+
+/* Blog post content styles */
+.blog-post-content {
+  line-height: 1.7;
+}
+
+.blog-post-content h1,
+.blog-post-content h2,
+.blog-post-content h3 {
+  color: #58a6ff;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+}
+
+.blog-post-content h1 {
+  font-size: 2rem;
+}
+
+.blog-post-content h2 {
+  font-size: 1.5rem;
+}
+
+.blog-post-content p {
+  margin-bottom: 1rem;
+}
+
+.blog-post-content ul,
+.blog-post-content ol {
+  margin-bottom: 1rem;
+  padding-left: 2rem;
+}
+
+.blog-post-content li {
+  margin-bottom: 0.5rem;
+}
+
+.blog-post-content pre {
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  padding: 1rem;
+  margin: 1rem 0;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.blog-post-content code {
+  background: #161b22;
+  color: #f85149;
+  padding: 0.2rem 0.4rem;
+  border-radius: 3px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.9em;
+}
+
+.blog-post-content pre code {
+  background: none;
+  color: inherit;
+  padding: 0;
+  border-radius: 0;
+}
+
+.blog-post-content hr {
+  border: none;
+  border-top: 1px solid #30363d;
+  margin: 2rem 0;
 }
 
 /* Contact page styles */

